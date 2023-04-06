@@ -59,7 +59,7 @@ def bt_realtime(data, fs):
     # extract peaks
     bt_plant.peaks_extraction(np.array(data), graph=False, min_freq=0.1, max_freq=65, precision=0.1, nIMFs=5, n_peaks=5, smooth_fft=4)
     #bt_plant.peaks_extension(method='harmonic_fit')
-
+    bt_plant.peaks_extension(method='harmonic_fit', n_harm=50)
     # compute metrics from peaks
     bt_plant.compute_peaks_metrics(n_harm=3, delta_lim=100)
     #bt_plant.compute_diss_curve(plot=True, input_type='peaks')
@@ -67,7 +67,7 @@ def bt_realtime(data, fs):
     # compute metrics of spectral curve
     bt_plant.compute_spectromorph(comp_chords=True, graph=False)
 
-    return bt_plant.peaks, bt_plant.peaks_metrics
+    return bt_plant.peaks, bt_plant.extended_peaks, bt_plant.peaks_metrics
 
 
 def read_serial_data():
@@ -137,7 +137,7 @@ def read_serial_data():
             if buffer_index == BUFFER_SIZE:
                 try:
                     buffer = [float(x) for x in buffer]
-                    peaks, metrics = bt_realtime(buffer, Fs=FS)
+                    peaks, extended_peaks, metrics = bt_realtime(buffer, Fs=FS)
                     print('PEAKS', peaks)
 
                     # Send the PPG value as an OSC message
@@ -146,6 +146,7 @@ def read_serial_data():
                     send_osc_message(metrics['tenney'], '/bt/metric/tenney')
                     send_osc_message(metrics['subharm_tension'], '/bt/metric/subharm')
                     send_osc_message(peaks, '/bt/peaks')
+                    send_osc_message(extended_peaks, '/bt/extended_peaks')
                     
                 except:
                     pass
