@@ -7,6 +7,8 @@ from threading import Thread
 import keyboard
 from scipy import stats
 from biotuner.biotuner_object import *
+from biotuner.scale_construction import harmonic_tuning
+from biotuner.rhythm_construction import consonant_euclid, euclid_long_to_short
 
 # Constants
 BUFFER_SIZE = 4000
@@ -64,10 +66,14 @@ def bt_realtime(data, fs):
     bt_plant.compute_peaks_metrics(n_harm=3, delta_lim=100)
     #bt_plant.compute_diss_curve(plot=True, input_type='peaks')
     
+    harm_tuning = harmonic_tuning(bt_plant.all_harmonics)
+    euclid, cons_euclid = consonant_euclid(harm_tuning, n_steps_down = 2, limit_denom = 16, 
+                                      limit_cons = 0.1, limit_denom_final = 16)
+    euclid_final = [euclid_long_to_short(x) for x in euclid]
     # compute metrics of spectral curve
     bt_plant.compute_spectromorph(comp_chords=True, graph=False)
 
-    return bt_plant.peaks, bt_plant.extended_peaks, bt_plant.peaks_metrics
+    return bt_plant.peaks, bt_plant.extended_peaks, bt_plant.peaks_metrics, euclid_final
 
 
 def read_serial_data():
@@ -137,7 +143,7 @@ def read_serial_data():
             if buffer_index == BUFFER_SIZE:
                 try:
                     buffer = [float(x) for x in buffer]
-                    peaks, extended_peaks, metrics = bt_realtime(buffer, Fs=FS)
+                    peaks, extended_peaks, metrics, euclid = bt_realtime(buffer, Fs=FS)
                     print('PEAKS', peaks)
 
                     # Send the PPG value as an OSC message
@@ -147,6 +153,10 @@ def read_serial_data():
                     send_osc_message(metrics['subharm_tension'], '/bt/metric/subharm')
                     send_osc_message(peaks, '/bt/peaks')
                     send_osc_message(extended_peaks, '/bt/extended_peaks')
+                    send_osc_message(euclid[0], '/bt/euclid/1')
+                    send_osc_message(euclid[1], '/bt/euclid/2')
+                    send_osc_message(euclid[2], '/bt/euclid/3')
+                    send_osc_message(euclid[3], '/bt/euclid/4')
                     
                 except:
                     pass
