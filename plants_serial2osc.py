@@ -12,7 +12,7 @@ from biotuner.rhythm_construction import consonant_euclid, euclid_long_to_short
 
 # Constants
 BUFFER_SIZE = 4000
-OVERLAP = 3000
+OVERLAP = 2000
 #FS = 50  # Sampling rate of the PPG signal in Hz
 OSC_ADDRESS = "/bt"
 OSC_IP = "127.0.0.1"
@@ -152,7 +152,7 @@ def read_serial_data():
                 send_osc_message(metrics['tenney'], '/bt/metric/tenney')
                 send_osc_message(metrics['subharm_tension'], '/bt/metric/subharm')
                 send_osc_message(peaks, '/bt/peaks')
-                send_osc_message(extended_peaks, '/bt/extended_peaks')
+                #send_osc_message(extended_peaks, '/bt/extended_peaks')
                 #send_osc_message(euclid[0], '/bt/euclid/1')
                 #send_osc_message(euclid[1], '/bt/euclid/2')
                 #send_osc_message(euclid[2], '/bt/euclid/3')
