@@ -12,10 +12,10 @@ from biotuner.rhythm_construction import consonant_euclid, euclid_long_to_short
 
 # Constants
 BUFFER_SIZE = 4000
-OVERLAP = 1000
+OVERLAP = 3000
 #FS = 50  # Sampling rate of the PPG signal in Hz
 OSC_ADDRESS = "/bt"
-OSC_IP = "<your IP address>"
+OSC_IP = "127.0.0.1"
 OSC_PORT = 4560
     
 
@@ -26,6 +26,7 @@ def send_osc_message(value, address):
         client.send_message(address, *value)
     else:
         client.send_message(address, value)
+    client._sock.close()  # Close the socket after sending the message
 
 
 
@@ -60,8 +61,7 @@ def bt_realtime(data, fs):
     
     # extract peaks
     bt_plant.peaks_extraction(np.array(data), graph=False, min_freq=0.1, max_freq=65, precision=0.1, nIMFs=5, n_peaks=5, smooth_fft=4)
-    #bt_plant.peaks_extension(method='harmonic_fit')
-    bt_plant.peaks_extension(method='harmonic_fit', n_harm=50)
+    bt_plant.peaks_extension(method='harmonic_fit', n_harm=10)
     # compute metrics from peaks
     bt_plant.compute_peaks_metrics(n_harm=3, delta_lim=100)
     #bt_plant.compute_diss_curve(plot=True, input_type='peaks')
@@ -71,7 +71,7 @@ def bt_realtime(data, fs):
                                       limit_cons = 0.1, limit_denom_final = 16)
     euclid_final = [euclid_long_to_short(x) for x in euclid]
     # compute metrics of spectral curve
-    bt_plant.compute_spectromorph(comp_chords=True, graph=False)
+    #bt_plant.compute_spectromorph(comp_chords=True, graph=False)
 
     return bt_plant.peaks, bt_plant.extended_peaks, bt_plant.peaks_metrics, euclid_final
 
@@ -141,25 +141,25 @@ def read_serial_data():
             # when buffer is full
             ib = 0
             if buffer_index == BUFFER_SIZE:
-                try:
-                    buffer = [float(x) for x in buffer]
-                    peaks, extended_peaks, metrics, euclid = bt_realtime(buffer, Fs=FS)
-                    print('PEAKS', peaks)
+                #try:
+                buffer = [float(x) for x in buffer]
+                peaks, extended_peaks, metrics, euclid = bt_realtime(buffer, fs=FS)
+                print('PEAKS', peaks)
 
-                    # Send the PPG value as an OSC message
-                    send_osc_message(metrics['harmsim'], '/bt/metric/harmsim')
-                    send_osc_message(metrics['cons'], '/bt/metric/cons')
-                    send_osc_message(metrics['tenney'], '/bt/metric/tenney')
-                    send_osc_message(metrics['subharm_tension'], '/bt/metric/subharm')
-                    send_osc_message(peaks, '/bt/peaks')
-                    send_osc_message(extended_peaks, '/bt/extended_peaks')
-                    send_osc_message(euclid[0], '/bt/euclid/1')
-                    send_osc_message(euclid[1], '/bt/euclid/2')
-                    send_osc_message(euclid[2], '/bt/euclid/3')
-                    send_osc_message(euclid[3], '/bt/euclid/4')
+                # Send the PPG value as an OSC message
+                send_osc_message(metrics['harmsim'], '/bt/metric/harmsim')
+                send_osc_message(metrics['cons'], '/bt/metric/cons')
+                send_osc_message(metrics['tenney'], '/bt/metric/tenney')
+                send_osc_message(metrics['subharm_tension'], '/bt/metric/subharm')
+                send_osc_message(peaks, '/bt/peaks')
+                send_osc_message(extended_peaks, '/bt/extended_peaks')
+                #send_osc_message(euclid[0], '/bt/euclid/1')
+                #send_osc_message(euclid[1], '/bt/euclid/2')
+                #send_osc_message(euclid[2], '/bt/euclid/3')
+                #send_osc_message(euclid[3], '/bt/euclid/4')
                     
-                except:
-                    pass
+                #except:
+                #    pass
                 # Reset the buffer
                 ib += 1
                 buffer = buffer[OVERLAP:]
